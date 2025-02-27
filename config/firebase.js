@@ -9,7 +9,7 @@ if (process.env.SERVICE_ACCOUNT_KEY) {
   serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
 } else {
   // 로컬 개발 환경: 파일 사용
-  serviceAccount = require(".serviceAccountKey.json");
+  serviceAccount = require("./serviceAccountKey.json");
 }
 
 const app = initializeApp({
