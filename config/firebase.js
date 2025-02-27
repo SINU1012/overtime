@@ -1,17 +1,20 @@
 // config/firebase.js
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
-const path = require("path");
-const serviceAccount = require("./serviceAccountKey.json");
 
-// Firebase 앱 초기화
+let serviceAccount;
+
+if (process.env.SERVICE_ACCOUNT_KEY) {
+  // 배포 환경: JSON을 환경변수로 넣어두고, 여기서 parse
+  serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+} else {
+  // 로컬 개발용 (파일로부터)
+  serviceAccount = require("./serviceAccountKey.json");
+}
+
 const app = initializeApp({
   credential: cert(serviceAccount),
-  // Firestore만 쓰는 경우 databaseURL은 필수 아님
-  // databaseURL: 'https://<YOUR_PROJECT_ID>.firebaseio.com',
 });
 
-// Firestore 인스턴스 얻기
 const db = getFirestore(app);
-
 module.exports = { db };
