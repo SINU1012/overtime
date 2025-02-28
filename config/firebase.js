@@ -1,11 +1,10 @@
-// config/firebase.js
-const { initializeApp, cert } = require("firebase-admin/app");
+const { initializeApp, cert, apps } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 
 let serviceAccount;
 
+// 환경 변수에서 서비스 계정 키를 가져오거나 로컬 파일에서 로드
 if (process.env.SERVICE_ACCOUNT_KEY) {
-  // 배포 환경: 환경 변수에서 JSON 문자열을 파싱
   try {
     serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
   } catch (error) {
@@ -13,7 +12,6 @@ if (process.env.SERVICE_ACCOUNT_KEY) {
     process.exit(1);
   }
 } else {
-  // 로컬 개발 환경: 로컬 파일 사용
   try {
     serviceAccount = require("./serviceAccountKey.json");
   } catch (error) {
@@ -22,9 +20,13 @@ if (process.env.SERVICE_ACCOUNT_KEY) {
   }
 }
 
-const app = initializeApp({
-  credential: cert(serviceAccount),
-});
+// 이미 초기화된 앱이 있는지 확인 (apps 배열이 비어 있으면 초기화)
+if (!apps.length) {
+  initializeApp({
+    credential: cert(serviceAccount),
+  });
+}
 
-const db = getFirestore(app);
+// Firestore 인스턴스 내보내기
+const db = getFirestore();
 module.exports = { db };
