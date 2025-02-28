@@ -14,6 +14,13 @@ admin.initializeApp({
   // 필요 시 databaseURL 설정 (예: databaseURL: "https://overtime-699eb.firebaseio.com")
 });
 
+const admin = require("firebase-admin");
+const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+admin.initializeApp({
+  credentail: admin.credentials.cert(serviceAccount),
+  databaseURL: "https://your-project-id.firebaseio.com",
+});
+
 const db = admin.firestore();
 
 exports.api = functions.https.onRequest(app);
