@@ -1,6 +1,9 @@
 // config/firebase.js
 
 const admin = require("firebase-admin");
+const functions = require("firebase-functions");
+const express = require("express");
+const app = express();
 
 // 서비스 계정 키 파일 경로를 올바르게 지정하세요.
 // 이 파일은 외부에 노출되지 않도록 별도로 관리해야 합니다.
@@ -12,5 +15,7 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
+
+exports.api = functions.https.onRequest(app);
 
 module.exports = { db };

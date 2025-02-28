@@ -4,7 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "lint": "eslint .",
+    "deploy": "firebase deploy"
   },
   "author": "",
   "license": "ISC",
@@ -15,5 +17,8 @@
     "express": "^4.18.2",
     "firebase": "^11.4.0",
     "firebase-admin": "^13.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.39.0"
   }
 }
