@@ -3,6 +3,7 @@
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const express = require("express");
+const app = express();
 const path = require("path");
 
 /**
