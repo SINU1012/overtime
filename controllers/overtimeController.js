@@ -1,5 +1,5 @@
 // controllers/overtimeController.js
-const { db } = require("../config/firebase"); // 서버용 Firestore 인스턴스 (firebase-admin 사용 권장)
+const { db } = require("../config/firebase");
 const ExcelJS = require("exceljs");
 
 /**
@@ -7,7 +7,9 @@ const ExcelJS = require("exceljs");
  */
 exports.createRecord = async (req, res) => {
   try {
-    const { userName, date, startTime, endTime, description } = req.body;
+    // [추가] dinner 필드를 req.body에서 함께 받음
+    const { userName, date, startTime, endTime, description, dinner } =
+      req.body;
 
     // 필수 필드 유효성 검사
     if (!userName || !date || !startTime || !endTime) {
@@ -32,13 +34,15 @@ exports.createRecord = async (req, res) => {
     // 총 시간 계산
     const totalHours = getOvertimeDuration(startTime, endTime);
 
-    // Firestore에 문서 추가 (컬렉션 이름: "OvertimeRecords")
+    // Firestore에 문서 추가
     const newDocRef = await db.collection("OvertimeRecords").add({
       userName,
       date,
       startTime,
       endTime,
       description: description || "",
+      // [추가] 석식 여부 필드 저장 (Y/N, 미입력 시 "")
+      dinner: dinner || "",
       totalHours,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -50,6 +54,8 @@ exports.createRecord = async (req, res) => {
       date,
       startTime,
       endTime,
+      // dinner 필드도 응답에 포함
+      dinner: dinner || "",
       totalHours,
     });
   } catch (error) {
@@ -62,7 +68,7 @@ exports.createRecord = async (req, res) => {
 
 /**
  * (2) 야근 기록 조회
- * GET /api/overtime?userName=xxx&year=YYYY&month=MM
+ *  GET /api/overtime?userName=xxx&year=YYYY&month=MM
  */
 exports.getRecords = async (req, res) => {
   try {
@@ -106,7 +112,7 @@ exports.getRecords = async (req, res) => {
 
 /**
  * (3) 엑셀 내보내기
- * GET /api/overtime/export
+ *  GET /api/overtime/export
  */
 exports.exportRecords = async (req, res) => {
   try {
@@ -126,7 +132,7 @@ exports.exportRecords = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Overtime Records");
 
-    // 헤더 설정
+    // 헤더 설정 (dinner 필드 추가)
     worksheet.columns = [
       { header: "ID", key: "id", width: 15 },
       { header: "사용자", key: "userName", width: 15 },
@@ -134,6 +140,7 @@ exports.exportRecords = async (req, res) => {
       { header: "시작시간", key: "startTime", width: 12 },
       { header: "종료시간", key: "endTime", width: 12 },
       { header: "총시간", key: "totalHours", width: 10 },
+      { header: "석식", key: "dinner", width: 10 }, // [추가]
       { header: "생성일시", key: "createdAt", width: 25 },
     ];
 
@@ -146,6 +153,8 @@ exports.exportRecords = async (req, res) => {
         startTime: r.startTime || "",
         endTime: r.endTime || "",
         totalHours: r.totalHours || 0,
+        // [추가] 석식 표시
+        dinner: r.dinner || "",
         createdAt: r.createdAt || "",
       });
     });
@@ -172,7 +181,7 @@ exports.exportRecords = async (req, res) => {
 
 /**
  * 시작-종료 시간 차이(시간) 계산
- *  - 종료시간이 시작시간보다 빠르면 다음날로 간주 (예: 22:00 ~ 07:00)
+ *  - 종료 시간이 시작 시간보다 빠르면 다음날로 간주 (예: 22:00 ~ 07:00)
  */
 function getOvertimeDuration(startTime, endTime) {
   if (!startTime || !endTime) return 0;
@@ -182,7 +191,7 @@ function getOvertimeDuration(startTime, endTime) {
   let startMins = sh * 60 + sm;
   let endMins = eh * 60 + em;
 
-  // 종료 시간이 시작 시간보다 빠른 경우, 다음 날로 간주하여 24시간 추가
+  // 종료 시간이 시작 시간보다 빠른 경우, 다음 날로 간주
   if (endMins < startMins) {
     endMins += 24 * 60;
   }

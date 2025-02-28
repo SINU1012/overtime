@@ -56,9 +56,21 @@
               role="group"
             ></div>
           </div>
+
+          <!-- [추가] 석식 여부 선택 영역 -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">석식 여부</label>
+            <div
+              id="dinnerButtonsContainer"
+              class="btn-group flex-wrap"
+              role="group"
+            ></div>
+          </div>
+
           <p class="text-muted">
             * 날짜는 자동으로 오늘 날짜가 기록됩니다.<br />
-            * “사용자” → “시작 시간” → “종료 시간” 클릭 시 자동으로 저장
+            * “사용자” → “시작 시간” → “종료 시간” 클릭 시 자동으로 저장<br />
+            * **석식 여부(Y/N) 선택 후 기록 가능**
           </p>
         </div>
       </div>
@@ -99,6 +111,8 @@
                   <th>사용자</th>
                   <th>날짜</th>
                   <th>시간(총)</th>
+                  <!-- [추가] 석식 컬럼 -->
+                  <th>석식</th>
                   <th>생성 일시</th>
                 </tr>
               </thead>

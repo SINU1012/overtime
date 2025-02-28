@@ -25,6 +25,7 @@ const downloadButton = document.getElementById("downloadButton");
  ***************************************/
 let selectedUser = null; // 현재 선택된 사용자
 let selectedStartTime = null; // 현재 선택된 시작 시간
+let selectedDinner = null; // [추가] 석식 여부 (Y 또는 N)
 
 // 사용자 리스트 (입력 및 조회용)
 const userList = [
@@ -89,7 +90,7 @@ let selectedYearFilter = null; // 전체 연도: null
 let selectedMonthFilter = null; // 전체 월: null
 
 /************************************************************************
- * 파트1) 입력 (사용자, 시작 시간, 종료 시간)
+ * 파트1) 입력 (사용자, 시작 시간, 종료 시간, 석식 여부)
  ************************************************************************/
 function initInputButtons() {
   // (1) 사용자 버튼 생성
@@ -105,9 +106,15 @@ function initInputButtons() {
       btn.classList.add("btn-selected");
       selectedUser = u;
       selectedStartTime = null;
+      // 사용자 선택 시, 시작 시간/석식 여부 초기화
       document
         .querySelectorAll(".start-time-btn")
         .forEach((b) => b.classList.remove("btn-selected"));
+      document
+        .querySelectorAll(".dinner-btn")
+        .forEach((b) => b.classList.remove("btn-selected"));
+      selectedDinner = null;
+
       alert(`사용자: ${u} 선택됨`);
     });
     userButtonsContainer.appendChild(btn);
@@ -149,6 +156,10 @@ function initInputButtons() {
         alert("먼저 야근 시작 시간을 선택하세요.");
         return;
       }
+      if (!selectedDinner) {
+        alert("먼저 석식 여부(Y/N)를 선택하세요.");
+        return;
+      }
       handleEndTimeClicked(t);
     });
     endTimeButtonsContainer.appendChild(btn);
@@ -162,15 +173,28 @@ function handleEndTimeClicked(chosenEndTime) {
     return;
   }
 
-  createRecord(selectedUser, getTodayString(), selectedStartTime, chosenEndTime)
+  createRecord(
+    selectedUser,
+    getTodayString(),
+    selectedStartTime,
+    chosenEndTime,
+    selectedDinner
+  )
     .then(() => {
       alert(
-        `야근 기록 완료! [${selectedUser} / ${selectedStartTime}~${chosenEndTime}]`
+        `야근 기록 완료! [${selectedUser} / ${selectedStartTime}~${chosenEndTime} / 석식:${selectedDinner}]`
       );
+
+      // 입력 후 시작/석식 상태 초기화
       document
         .querySelectorAll(".start-time-btn")
         .forEach((b) => b.classList.remove("btn-selected"));
+      document
+        .querySelectorAll(".dinner-btn")
+        .forEach((b) => b.classList.remove("btn-selected"));
       selectedStartTime = null;
+      selectedDinner = null;
+
       fetchRecords();
     })
     .catch((err) => {
@@ -186,7 +210,7 @@ function isEndTimeValid(startT, endT) {
   let startMins = sh * 60 + sm;
   let endMins = eh * 60 + em;
   if (endMins < startMins) {
-    endMins += 24 * 60;
+    endMins += 24 * 60; // 자정 넘어가는 경우
   }
   return endMins - startMins >= 0;
 }
@@ -200,8 +224,16 @@ function getTodayString() {
 }
 
 /** 서버에 기록 생성 (POST /api/overtime) */
-async function createRecord(userName, date, startTime, endTime) {
-  const bodyData = { userName, date, startTime, endTime, description: "" };
+async function createRecord(userName, date, startTime, endTime, dinner) {
+  // [추가] dinner 필드를 함께 전송
+  const bodyData = {
+    userName,
+    date,
+    startTime,
+    endTime,
+    dinner,
+    description: "",
+  };
   const res = await fetch("/api/overtime", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -211,6 +243,35 @@ async function createRecord(userName, date, startTime, endTime) {
     throw new Error(`서버 응답 실패: ${res.status} ${res.statusText}`);
   }
   return await res.json();
+}
+
+/** [추가] 석식 여부(Y/N) 버튼 초기화 */
+function initDinnerButtons() {
+  const dinnerButtonsContainer = document.getElementById(
+    "dinnerButtonsContainer"
+  );
+  dinnerButtonsContainer.innerHTML = "";
+
+  ["Y", "N"].forEach((value) => {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-outline-info m-1 fixed-btn dinner-btn";
+    btn.textContent = value;
+    btn.addEventListener("click", () => {
+      if (!selectedUser) {
+        alert("먼저 사용자(이름)를 선택하세요.");
+        return;
+      }
+      // 버튼 토글
+      document
+        .querySelectorAll(".dinner-btn")
+        .forEach((b) => b.classList.remove("btn-selected"));
+      btn.classList.add("btn-selected");
+
+      selectedDinner = value;
+      alert(`석식 여부: ${value} 선택됨`);
+    });
+    dinnerButtonsContainer.appendChild(btn);
+  });
 }
 
 /************************************************************************
@@ -241,13 +302,22 @@ async function fetchRecords(params = {}) {
 
 function renderTable(records) {
   recordsTableBody.innerHTML = "";
+
   records.forEach((rec) => {
     const tr = document.createElement("tr");
+
+    // 시간 범위 + 총시간
     const timeRange = `${rec.startTime}~${rec.endTime} (${rec.totalHours}시간)`;
+
+    // [추가] 석식(Y/N) 값
+    const dinnerValue = rec.dinner ? rec.dinner : "";
+
     tr.innerHTML = `
       <td>${rec.userName || ""}</td>
       <td>${rec.date || ""}</td>
       <td>${timeRange}</td>
+      <!-- 석식 여부 표시 -->
+      <td>${dinnerValue}</td>
       <td>${rec.createdAt ? new Date(rec.createdAt).toLocaleString() : ""}</td>
     `;
     recordsTableBody.appendChild(tr);
@@ -385,7 +455,10 @@ function updateFilterFetch() {
  * 파트3) 초기 로드
  ************************************************************************/
 function init() {
+  // 기존 버튼 초기화
   initInputButtons();
+  // [추가] 석식 버튼 초기화
+  initDinnerButtons();
   createUserFilterButtons();
   fetchRecords();
   downloadButton.addEventListener("click", downloadExcel);
