@@ -3,7 +3,6 @@
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const express = require("express");
-const app = express();
 const path = require("path");
 
 /**
@@ -35,7 +34,7 @@ const db = admin.firestore();
 const app = express();
 
 // 예시 라우터
-app.get("/", (req, res) => {
+app.get("/overtime", (req, res) => {
   res.send("Hello from Firebase Functions!");
 });
 
