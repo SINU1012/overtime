@@ -1,6 +1,5 @@
 // config/firebase.js
 const admin = require("firebase-admin");
-const { db } = require("./config/firebase");
 
 // 예: db.collection("OvertimeRecords").add(...)
 
