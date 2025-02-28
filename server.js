@@ -1,21 +1,25 @@
-// server.js
 const express = require("express");
-const path = require("path");
-const overtimeRoutes = require("./routes/overtime");
+const admin = require("firebase-admin");
 
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+} catch (error) {
+  console.error("서비스 계정 키 파싱 실패:", error);
+  process.exit(1);
+}
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const db = admin.firestore();
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(require("./controllers/overtimeController"));
 
-// 정적 파일 제공: public 폴더
-app.use(express.static(path.join(__dirname, "public")));
-
-// /api/overtime 라우트
-app.use("/api/overtime", overtimeRoutes);
-
-// 서버 시작
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+app.listen(3000, () => {
+  console.log("서버가 http://localhost:3000에서 실행 중입니다");
 });
+
+module.exports = { db };

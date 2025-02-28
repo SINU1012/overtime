@@ -9,15 +9,37 @@ exports.createRecord = async (req, res) => {
   try {
     const { userName, date, startTime, endTime, description } = req.body;
 
-    // 간단히 총 시간 계산
+    // 필수 필드 유효성 검사
+    if (!userName || !date || !startTime || !endTime) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "필수 필드(userName, date, startTime, endTime)가 누락되었습니다.",
+        });
+    }
+
+    // 날짜 및 시간 형식 검증
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res
+        .status(400)
+        .json({ message: "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)" });
+    }
+    if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) {
+      return res
+        .status(400)
+        .json({ message: "시간 형식이 올바르지 않습니다. (HH:MM)" });
+    }
+
+    // 총 시간 계산
     const totalHours = getOvertimeDuration(startTime, endTime);
 
     // Firestore에 문서 추가
     const newDoc = await db.collection("OvertimeRecords").add({
-      userName: userName || "",
-      date: date || "",
-      startTime: startTime || "",
-      endTime: endTime || "",
+      userName,
+      date,
+      startTime,
+      endTime,
       description: description || "",
       totalHours,
       createdAt: new Date().toISOString(),
@@ -33,8 +55,8 @@ exports.createRecord = async (req, res) => {
       totalHours,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "서버 에러 발생" });
+    console.error("야근 기록 생성 중 에러:", error.message);
+    return res.status(500).json({ message: "서버 에러 발생: 기록 생성 실패" });
   }
 };
 
@@ -54,12 +76,9 @@ exports.getRecords = async (req, res) => {
     }
 
     // 연/월 필터
-    // DB에 date가 "YYYY-MM-DD" 문자열이라고 가정
     if (year && month) {
       const mm = String(month).padStart(2, "0");
       const startDate = `${year}-${mm}-01`;
-
-      // 해당 월의 말일 계산(2월=28/29, 4월=30 등)
       const lastDay = new Date(year, month, 0).getDate();
       const endDate = `${year}-${mm}-${lastDay}`;
 
@@ -82,8 +101,8 @@ exports.getRecords = async (req, res) => {
 
     return res.status(200).json(records);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "서버 에러 발생" });
+    console.error("야근 기록 조회 중 에러:", error.message);
+    return res.status(500).json({ message: "서버 에러 발생: 기록 조회 실패" });
   }
 };
 
@@ -93,7 +112,7 @@ exports.getRecords = async (req, res) => {
  */
 exports.exportRecords = async (req, res) => {
   try {
-    // 전체 기록(또는 특정 정렬)
+    // 전체 기록 가져오기 (필터링 또는 페이지네이션 가능성 고려)
     const snapshot = await db
       .collection("OvertimeRecords")
       .orderBy("date", "asc")
@@ -105,11 +124,11 @@ exports.exportRecords = async (req, res) => {
       records.push({ id: doc.id, ...doc.data() });
     });
 
-    // ExcelJS 워크북/시트
+    // ExcelJS 워크북 및 시트 생성
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Overtime Records");
 
-    // 헤더
+    // 헤더 설정
     worksheet.columns = [
       { header: "ID", key: "id", width: 15 },
       { header: "사용자", key: "userName", width: 15 },
@@ -133,7 +152,7 @@ exports.exportRecords = async (req, res) => {
       });
     });
 
-    // 응답 헤더 (다운로드)
+    // 응답 헤더 설정 (다운로드)
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -146,12 +165,16 @@ exports.exportRecords = async (req, res) => {
     await workbook.xlsx.write(res);
     return res.end();
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "엑셀 내보내기 에러" });
+    console.error("엑셀 내보내기 중 에러:", error.message);
+    return res
+      .status(500)
+      .json({ message: "서버 에러 발생: 엑셀 내보내기 실패" });
   }
 };
 
-/** 시작-종료 시각 차이(시간) 계산 */
+/**
+ * 시작-종료 시간 차이(시간) 계산
+ */
 function getOvertimeDuration(startTime, endTime) {
   if (!startTime || !endTime) return 0;
   const [sh, sm] = startTime.split(":").map(Number);
