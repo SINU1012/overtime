@@ -11,12 +11,10 @@ exports.createRecord = async (req, res) => {
 
     // 필수 필드 유효성 검사
     if (!userName || !date || !startTime || !endTime) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "필수 필드(userName, date, startTime, endTime)가 누락되었습니다.",
-        });
+      return res.status(400).json({
+        message:
+          "필수 필드(userName, date, startTime, endTime)가 누락되었습니다.",
+      });
     }
 
     // 날짜 및 시간 형식 검증
@@ -55,7 +53,7 @@ exports.createRecord = async (req, res) => {
       totalHours,
     });
   } catch (error) {
-    console.error("야근 기록 생성 중 에러:", error.message);
+    console.error(`야근 기록 생성 중 에러: ${error.message}`);
     return res.status(500).json({ message: "서버 에러 발생: 기록 생성 실패" });
   }
 };
@@ -79,6 +77,7 @@ exports.getRecords = async (req, res) => {
     if (year && month) {
       const mm = String(month).padStart(2, "0");
       const startDate = `${year}-${mm}-01`;
+      // 예: month=2 -> 2월 말일 = 28 or 29
       const lastDay = new Date(year, month, 0).getDate();
       const endDate = `${year}-${mm}-${lastDay}`;
 
@@ -101,7 +100,7 @@ exports.getRecords = async (req, res) => {
 
     return res.status(200).json(records);
   } catch (error) {
-    console.error("야근 기록 조회 중 에러:", error.message);
+    console.error(`야근 기록 조회 중 에러: ${error.message}`);
     return res.status(500).json({ message: "서버 에러 발생: 기록 조회 실패" });
   }
 };
@@ -112,7 +111,7 @@ exports.getRecords = async (req, res) => {
  */
 exports.exportRecords = async (req, res) => {
   try {
-    // 전체 기록 가져오기 (필터링 또는 페이지네이션 가능성 고려)
+    // 전체 기록 가져오기
     const snapshot = await db
       .collection("OvertimeRecords")
       .orderBy("date", "asc")
@@ -159,13 +158,13 @@ exports.exportRecords = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=OvertimeRecords.xlsx"
+      'attachment; filename="OvertimeRecords.xlsx"'
     );
 
     await workbook.xlsx.write(res);
     return res.end();
   } catch (error) {
-    console.error("엑셀 내보내기 중 에러:", error.message);
+    console.error(`엑셀 내보내기 중 에러: ${error.message}`);
     return res
       .status(500)
       .json({ message: "서버 에러 발생: 엑셀 내보내기 실패" });
@@ -174,13 +173,21 @@ exports.exportRecords = async (req, res) => {
 
 /**
  * 시작-종료 시간 차이(시간) 계산
+ *  - 종료시간이 시작시간보다 빠르면 다음날로 간주 (예: 22:00 ~ 07:00)
  */
 function getOvertimeDuration(startTime, endTime) {
   if (!startTime || !endTime) return 0;
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
-  const startMins = sh * 60 + (sm || 0);
-  const endMins = eh * 60 + (em || 0);
+
+  let startMins = sh * 60 + (sm || 0);
+  let endMins = eh * 60 + (em || 0);
+
+  // 다음날 새벽까지 야근 고려 (endTime < startTime 이면 24시간 더함)
+  if (endMins < startMins) {
+    endMins += 24 * 60;
+  }
+
   const diff = endMins - startMins;
-  return diff > 0 ? diff / 60 : 0;
+  return diff >= 0 ? diff / 60 : 0;
 }

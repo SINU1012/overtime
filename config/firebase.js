@@ -1,27 +1,37 @@
-// config/firebase.js
 const admin = require("firebase-admin");
 
-// 예: db.collection("OvertimeRecords").add(...)
-
-// 1) serviceAccount 준비
+// 서비스 계정 키 로드
 let serviceAccount;
 if (process.env.SERVICE_ACCOUNT_KEY) {
-  // 배포 환경: JSON 문자열을 환경 변수에서 로드
-  serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+  try {
+    serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+    // private_key의 줄바꿈 처리 (필요한 경우에만)
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(
+        /\\n/g,
+        "\n"
+      );
+    }
+  } catch (error) {
+    console.error("SERVICE_ACCOUNT_KEY 파싱 실패:", error);
+    process.exit(1);
+  }
 } else {
-  // 로컬 개발 환경: 로컬 파일 사용
-  serviceAccount = require("./serviceAccountKey.json");
+  try {
+    serviceAccount = require("./serviceAccountKey.json");
+  } catch (error) {
+    console.error("serviceAccountKey.json 파일을 로드할 수 없습니다:", error);
+    process.exit(1);
+  }
 }
 
-// 2) Firebase Admin 초기화
-//    이미 초기화된 적이 없으면 initializeApp 수행
+// Firebase 앱 초기화 (이미 초기화되지 않은 경우에만)
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
 }
 
-// 3) Firestore 인스턴스만 내보냄
+// Firestore 인스턴스 내보내기
 const db = admin.firestore();
-
 module.exports = { db };
