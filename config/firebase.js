@@ -1,37 +1,16 @@
+// config/firebase.js
+
 const admin = require("firebase-admin");
 
-// 서비스 계정 키 로드
-let serviceAccount;
-if (process.env.SERVICE_ACCOUNT_KEY) {
-  try {
-    serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
-    // private_key의 줄바꿈 처리 (필요한 경우에만)
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(
-        /\\n/g,
-        "\n"
-      );
-    }
-  } catch (error) {
-    console.error("SERVICE_ACCOUNT_KEY 파싱 실패:", error);
-    process.exit(1);
-  }
-} else {
-  try {
-    serviceAccount = require("./serviceAccountKey.json");
-  } catch (error) {
-    console.error("serviceAccountKey.json 파일을 로드할 수 없습니다:", error);
-    process.exit(1);
-  }
-}
+// 서비스 계정 키 파일 경로를 올바르게 지정하세요.
+// 이 파일은 외부에 노출되지 않도록 별도로 관리해야 합니다.
+const serviceAccount = require("../config/serviceAccountKey.json");
 
-// Firebase 앱 초기화 (이미 초기화되지 않은 경우에만)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  // 필요 시 databaseURL 설정 (예: databaseURL: "https://overtime-699eb.firebaseio.com")
+});
 
-// Firestore 인스턴스 내보내기
 const db = admin.firestore();
+
 module.exports = { db };

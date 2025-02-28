@@ -1,7 +1,8 @@
+// app.js
 const express = require("express");
 const path = require("path");
-const overtimeRoutes = require("./routes/overtime");
 const cors = require("cors");
+const overtimeRoutes = require("./routes/overtime");
 
 const app = express();
 
@@ -12,10 +13,10 @@ app.use(express.urlencoded({ extended: true }));
 // CORS 설정 (필요 시)
 app.use(cors());
 
-// 정적 파일 제공: public 폴더
+// 정적 파일 제공: public 폴더 (클라이언트 코드)
 app.use(express.static(path.join(__dirname, "public")));
 
-// /api/overtime 라우트
+// /api/overtime 라우트 설정
 app.use("/api/overtime", overtimeRoutes);
 
 // 404 에러 처리
@@ -29,8 +30,8 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!");
 });
 
-// 서버 시작
+// 환경 변수(PORT)를 사용하여 서버 시작
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server is running at http://localhost:" + PORT);
+  console.log(`Server is running at http://localhost:${PORT}`);
 });

@@ -1,5 +1,5 @@
 // controllers/overtimeController.js
-const { db } = require("../config/firebase"); // Firestore 인스턴스
+const { db } = require("../config/firebase"); // 서버용 Firestore 인스턴스 (firebase-admin 사용 권장)
 const ExcelJS = require("exceljs");
 
 /**
@@ -32,8 +32,8 @@ exports.createRecord = async (req, res) => {
     // 총 시간 계산
     const totalHours = getOvertimeDuration(startTime, endTime);
 
-    // Firestore에 문서 추가
-    const newDoc = await db.collection("OvertimeRecords").add({
+    // Firestore에 문서 추가 (컬렉션 이름: "OvertimeRecords")
+    const newDocRef = await db.collection("OvertimeRecords").add({
       userName,
       date,
       startTime,
@@ -45,7 +45,7 @@ exports.createRecord = async (req, res) => {
     });
 
     return res.status(201).json({
-      id: newDoc.id,
+      id: newDocRef.id,
       userName,
       date,
       startTime,
@@ -54,7 +54,9 @@ exports.createRecord = async (req, res) => {
     });
   } catch (error) {
     console.error(`야근 기록 생성 중 에러: ${error.message}`);
-    return res.status(500).json({ message: "서버 에러 발생: 기록 생성 실패" });
+    return res
+      .status(500)
+      .json({ message: `서버 에러 발생: 기록 생성 실패 - ${error.message}` });
   }
 };
 
@@ -65,7 +67,6 @@ exports.createRecord = async (req, res) => {
 exports.getRecords = async (req, res) => {
   try {
     const { userName, year, month } = req.query;
-
     let queryRef = db.collection("OvertimeRecords");
 
     // 사용자명 필터
@@ -77,7 +78,6 @@ exports.getRecords = async (req, res) => {
     if (year && month) {
       const mm = String(month).padStart(2, "0");
       const startDate = `${year}-${mm}-01`;
-      // 예: month=2 -> 2월 말일 = 28 or 29
       const lastDay = new Date(year, month, 0).getDate();
       const endDate = `${year}-${mm}-${lastDay}`;
 
@@ -92,16 +92,15 @@ exports.getRecords = async (req, res) => {
     const snapshot = await queryRef.get();
     const records = [];
     snapshot.forEach((doc) => {
-      records.push({
-        id: doc.id,
-        ...doc.data(),
-      });
+      records.push({ id: doc.id, ...doc.data() });
     });
 
     return res.status(200).json(records);
   } catch (error) {
     console.error(`야근 기록 조회 중 에러: ${error.message}`);
-    return res.status(500).json({ message: "서버 에러 발생: 기록 조회 실패" });
+    return res
+      .status(500)
+      .json({ message: `서버 에러 발생: 기록 조회 실패 - ${error.message}` });
   }
 };
 
@@ -165,9 +164,9 @@ exports.exportRecords = async (req, res) => {
     return res.end();
   } catch (error) {
     console.error(`엑셀 내보내기 중 에러: ${error.message}`);
-    return res
-      .status(500)
-      .json({ message: "서버 에러 발생: 엑셀 내보내기 실패" });
+    return res.status(500).json({
+      message: `서버 에러 발생: 엑셀 내보내기 실패 - ${error.message}`,
+    });
   }
 };
 
@@ -180,10 +179,10 @@ function getOvertimeDuration(startTime, endTime) {
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
 
-  let startMins = sh * 60 + (sm || 0);
-  let endMins = eh * 60 + (em || 0);
+  let startMins = sh * 60 + sm;
+  let endMins = eh * 60 + em;
 
-  // 다음날 새벽까지 야근 고려 (endTime < startTime 이면 24시간 더함)
+  // 종료 시간이 시작 시간보다 빠른 경우, 다음 날로 간주하여 24시간 추가
   if (endMins < startMins) {
     endMins += 24 * 60;
   }
