@@ -5,6 +5,7 @@ const usersCollection = db.collection("Users");
 // 모든 사용자 조회
 exports.getUsers = async (req, res) => {
   try {
+    console.log('getUsers called with query:', req.query);
     const { includeInactive } = req.query;
     
     let query = usersCollection;
@@ -14,6 +15,7 @@ exports.getUsers = async (req, res) => {
       query = query.where('isActive', '==', true);
     }
     
+    console.log('Attempting to fetch users from Firestore...');
     const snapshot = await query.orderBy('name').get();
     const users = [];
     
@@ -24,9 +26,12 @@ exports.getUsers = async (req, res) => {
       });
     });
     
+    console.log(`Successfully fetched ${users.length} users`);
     res.json(users);
   } catch (error) {
     console.error("사용자 조회 오류:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error code:", error.code);
     
     // Firebase 초기화 오류인 경우 특별한 메시지 반환
     if (error.message === 'Firebase not initialized') {
@@ -36,7 +41,19 @@ exports.getUsers = async (req, res) => {
       });
     }
     
-    res.status(500).json({ error: "사용자 조회 중 오류가 발생했습니다." });
+    // Firestore 권한 오류
+    if (error.code === 7 || error.code === 'permission-denied') {
+      return res.status(403).json({ 
+        error: "Firestore 접근 권한이 없습니다.",
+        detail: "서비스 계정 권한을 확인해주세요."
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "사용자 조회 중 오류가 발생했습니다.",
+      message: error.message,
+      code: error.code
+    });
   }
 };
 
