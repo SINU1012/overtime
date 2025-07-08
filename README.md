@@ -45,7 +45,23 @@ npm start
 1. Railway 계정 생성
 2. GitHub 저장소 연결
 3. 환경 변수 설정 (SERVICE_ACCOUNT_KEY)
+   - Railway 대시보드 > 프로젝트 선택
+   - Variables 탭 클릭
+   - Add Variable 버튼 클릭
+   - Key: `SERVICE_ACCOUNT_KEY`
+   - Value: Firebase 서비스 계정 JSON을 한 줄로 입력
+     ```
+     {"type":"service_account","project_id":"your-project-id",...}
+     ```
 4. 자동 배포 확인
+
+### Firebase 서비스 계정 키 얻는 방법
+1. [Firebase Console](https://console.firebase.google.com) 접속
+2. 프로젝트 선택
+3. 프로젝트 설정 > 서비스 계정 탭
+4. "새 비공개 키 생성" 버튼 클릭
+5. 다운로드된 JSON 파일의 내용을 복사
+6. JSON을 한 줄로 변환 (온라인 JSON minifier 사용 가능)
 
 ## 환경 변수
 - `SERVICE_ACCOUNT_KEY`: Firebase 서비스 계정 키 (필수)

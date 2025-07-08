@@ -18,6 +18,8 @@
 - ✅ /api/users 라우트 추가
 - ✅ favicon.ico 플레이스홀더 생성
 - ✅ README.md 및 .env.example 문서 작성
+- ✅ Firebase 초기화 오류 처리 개선
+- ✅ FieldValue export 추가
 
 ## 디렉토리 구조
 ```

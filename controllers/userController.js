@@ -27,6 +27,15 @@ exports.getUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("사용자 조회 오류:", error);
+    
+    // Firebase 초기화 오류인 경우 특별한 메시지 반환
+    if (error.message === 'Firebase not initialized') {
+      return res.status(503).json({ 
+        error: "Firebase가 초기화되지 않았습니다. 환경 변수를 확인해주세요.",
+        detail: "SERVICE_ACCOUNT_KEY 환경 변수가 설정되지 않았습니다."
+      });
+    }
+    
     res.status(500).json({ error: "사용자 조회 중 오류가 발생했습니다." });
   }
 };
