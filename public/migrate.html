@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>사용자 마이그레이션</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>기존 사용자 마이그레이션</h1>
+    <p>아래 버튼을 클릭하면 기존 사용자들이 자동으로 등록됩니다:</p>
+    <ul>
+        <li>김지운, 채충헌, 박형준, 김태율, 박상우, 박신우</li>
+        <li>김준서, 김은솔, 김세연, 변성훈, 유창현, 이지우</li>
+        <li>김진옥, 송봄</li>
+    </ul>
+    <button onclick="migrateUsers()">사용자 마이그레이션 실행</button>
+    <div id="result"></div>
+
+    <script>
+        async function migrateUsers() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '마이그레이션 중...';
+            
+            try {
+                const response = await fetch('/api/users/migrate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<h3>마이그레이션 완료!</h3>';
+                    resultDiv.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML = '<h3>오류 발생</h3>';
+                    resultDiv.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<h3>오류 발생</h3>';
+                resultDiv.innerHTML += '<p>' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
