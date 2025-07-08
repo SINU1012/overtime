@@ -3,13 +3,15 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Your web app's Firebase configuration
+// TODO: Firebase Console에서 프로젝트 설정 > 일반 > 내 앱에서 구성 정보를 복사하여 아래에 붙여넣으세요
+// Firebase Console URL: https://console.firebase.google.com/project/overtime-699eb/settings/general
 const firebaseConfig = {
   // Firebase 프로젝트 설정 정보가 필요합니다
-  // TODO: Firebase Console에서 가져온 설정으로 교체해주세요
+  // 프로젝트 ID는 "overtime-699eb" 입니다
   apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
+  authDomain: "overtime-699eb.firebaseapp.com",
+  projectId: "overtime-699eb",
+  storageBucket: "overtime-699eb.appspot.com",
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
