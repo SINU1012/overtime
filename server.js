@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const overtimeRoutes = require("./routes/overtime");
+const usersRoutes = require("./routes/users");
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // /api/overtime 라우트 설정
 app.use("/api/overtime", overtimeRoutes);
+
+// /api/users 라우트 설정
+app.use("/api/users", usersRoutes);
 
 // 404 에러 처리
 app.use((req, res, next) => {
