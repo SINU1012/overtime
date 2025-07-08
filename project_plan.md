@@ -17,6 +17,7 @@
 - ✅ 클라이언트용 firebase.js 생성
 - ✅ /api/users 라우트 추가
 - ✅ favicon.ico 플레이스홀더 생성
+- ✅ README.md 및 .env.example 문서 작성
 
 ## 디렉토리 구조
 ```
